@@ -52,6 +52,9 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.material3.Button
 import tw.edu.pu.csim.s1141245.basicui_20261027.ui.theme.BasicUI_20261027Theme
 
 class MainActivity : ComponentActivity() {
@@ -78,10 +81,20 @@ fun Main(modifier: Modifier = Modifier) {
         ColumnExample(modifier)
         TextFieldExample(modifier)
 
-        Column{
-            SimpleVideoPlayer(R.raw.love)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            var currentVideo by remember { mutableIntStateOf(R.raw.love) }
+            
+            SimpleVideoPlayer(currentVideo)
+            
+            Button(onClick = { 
+                currentVideo = if (currentVideo == R.raw.love) R.raw.handpan else R.raw.love 
+            }) {
+                Text(text = "Switch Video")
+            }
+            
             LazyRowExample(modifier)
-
         }
     }
 }
@@ -285,14 +298,17 @@ fun SimpleVideoPlayer(
 ) {
     val context = LocalContext.current
 
-    // 建立並記住 ExoPlayer 實體，設定影片路徑與自動播放
+    // 建立並記住 ExoPlayer 實體
     val exoPlayer = remember {
-        ExoPlayer.Builder(context).build().apply {
-            val uri = "android.resource://${context.packageName}/$videoRes"
-            setMediaItem(MediaItem.fromUri(uri))
-            prepare()
-            playWhenReady = true // 載入完成自動播放
-        }
+        ExoPlayer.Builder(context).build()
+    }
+
+    // 當傳入的 videoRes 改變時，更新播放的影片
+    LaunchedEffect(videoRes) {
+        val uri = "android.resource://${context.packageName}/$videoRes"
+        exoPlayer.setMediaItem(MediaItem.fromUri(uri))
+        exoPlayer.prepare()
+        exoPlayer.playWhenReady = true
     }
 
     // 利用 DisposableEffect 管理生命週期
